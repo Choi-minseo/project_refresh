@@ -1,5 +1,38 @@
 # project_refresh
 
+#include <SoftwareSerial.h>
+
+SoftwareSerial mySerial(10, 11); // RX, TX 핀 설정
+
+void setup() {
+  Serial.begin(9600); // 기본 시리얼 모니터
+  mySerial.begin(9600); // CM1106과 통신용 시리얼
+  
+  Serial.println("CM1106 CO2 Sensor Test");
+}
+
+void loop() {
+  byte request[] = {0x11, 0x01, 0x01, 0xED}; // CM1106 데이터 요청 명령
+  byte response[8]; // 응답 저장용 배열
+
+  mySerial.write(request, sizeof(request)); // 센서에 데이터 요청
+  delay(100); // 센서 응답 대기
+  
+  if (mySerial.available() >= 8) { // 응답 데이터가 충분히 도착했는지 확인
+    for (int i = 0; i < 8; i++) {
+      response[i] = mySerial.read(); // 데이터 읽기
+    }
+
+    // 응답 데이터에서 CO2 농도 추출 (데이터 시트 참고)
+    if (response[0] == 0x16 && response[1] == 0x02) {
+      int co2 = (response[2] << 8) | response[3];
+      Serial.println("CO2: " + String(co2) + " ppm");
+    }
+  }
+  delay(2000); // 2초마다 데이터 요청
+}
+
+
 아두이노(Arduino)와 젯슨 나노(Jetson Nano)를 사용하여 온도, 습도, CO2 데이터를 수집하고 90분 동안 데이터를 엑셀 파일로 저장하는 작업을 설정하는 방법을 단계적으로 설명하겠습니다.
 
 단계 1: 아두이노 코드 작성 및 업로드
